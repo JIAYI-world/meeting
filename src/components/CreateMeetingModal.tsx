@@ -38,6 +38,8 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
       todos: [],
       preTodos: [],
       previewSummary: '',
+      rawInput: '',
+      transcript: '',
       status: 'preparing',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

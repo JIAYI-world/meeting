@@ -34,6 +34,8 @@ export interface Meeting {
   todos: Todo[];
   preTodos: PreTodo[];
   previewSummary: string;
+  rawInput: string;
+  transcript: string;
   status: 'preparing' | 'ongoing' | 'completed';
   createdAt: string;
   updatedAt: string;
@@ -52,6 +54,7 @@ export interface MinuteChapter {
   timestamp: string;
   title: string;
   summary: string;
+  rawSnippet: string;
 }
 
 export interface Decision {
@@ -71,13 +74,19 @@ export interface Minutes {
   createdAt: string;
 }
 
+export interface ContextSnippet {
+  timestamp: string;
+  speaker: string;
+  text: string;
+}
+
 export interface Todo {
   id: string;
   content: string;
   assignee: string;
   dueDate: string;
   status: 'pending' | 'in_progress' | 'completed';
-  contextSnippet: string;
+  contextSnippet: ContextSnippet;
 }
 
 export type TabType = 'agenda' | 'minutes';

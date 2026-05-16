@@ -262,12 +262,12 @@ export async function generateMinutes(rawInput: string): Promise<Minutes> {
   await delay(2500 + Math.random() * 1500);
 
   const chapters: MinuteChapter[] = [
-    { id: generateId(), timestamp: '00:00', title: '会议开场与背景同步', summary: '主持人介绍会议目标：评估高并发场景下 API 性能瓶颈，确定优化方案。同步上周故障影响范围：8.7 万笔订单受阻，P99 延迟飙升至 580ms。' },
-    { id: generateId(), timestamp: '05:30', title: '性能数据回顾', summary: 'SRE 团队展示监控大盘：数据库连接池利用率持续 >95%，订单查询慢 SQL 占总请求 23%，缓存命中率从 92% 降至 78%。' },
-    { id: generateId(), timestamp: '12:00', title: '根因分析', summary: 'DBA 定位核心瓶颈：订单表缺少 (user_id, created_at) 联合索引，导致全表扫描。连接池配置不合理，max_connections=100 无法应对峰值。' },
-    { id: generateId(), timestamp: '20:00', title: '方案讨论与分歧', summary: '方案 A：增加索引 + 调整连接池（DBA 提出）；方案 B：引入读写分离 + Redis 缓存层（架构师提出）；方案 C：微服务拆分订单模块（后端负责人提出）。各方对实施周期和风险存在分歧。' },
-    { id: generateId(), timestamp: '32:00', title: '决策与排期', summary: '最终采纳方案 A 作为短期方案（1 周内上线），方案 B 作为中期方案（Q3 启动）。方案 C 因改动范围过大被否决，留待后续评估。' },
-    { id: generateId(), timestamp: '40:00', title: '后续行动项', summary: '明确各项任务负责人与截止日期：索引优化本周五前完成、连接池调优下周一上线、读写分离方案下周三前出设计文档。' },
+    { id: generateId(), timestamp: '00:00', title: '会议开场与背景同步', summary: '主持人介绍会议目标：评估高并发场景下 API 性能瓶颈，确定优化方案。同步上周故障影响范围：8.7 万笔订单受阻，P99 延迟飙升至 580ms。', rawSnippet: '【00:00 主持人】各位好，今天重点讨论 API 性能优化方案。上周的故障大家印象应该还很深刻，8.7 万笔订单受影响，P99 延迟飙到 580ms。先让 SRE 团队回顾一下数据。\n\n【00:45 SRE - 张工】我来汇报。上周三 14:22-15:10 期间，支付接口 P99 延迟从正常 200ms 飙升至 12s，最终影响 8.7 万笔订单。' },
+    { id: generateId(), timestamp: '05:30', title: '性能数据回顾', summary: 'SRE 团队展示监控大盘：数据库连接池利用率持续 >95%，订单查询慢 SQL 占总请求 23%，缓存命中率从 92% 降至 78%。', rawSnippet: '【05:30 SRE - 张工】从监控大盘来看，有三个核心问题。第一，数据库连接池利用率持续在 95% 以上，峰值到 99%。第二，订单查询的慢 SQL 占了总请求的 23%，这些 SQL 基本都是全表扫描。第三，缓存命中率从 92% 掉到了 78%，说明缓存策略需要调整。' },
+    { id: generateId(), timestamp: '12:00', title: '根因分析', summary: 'DBA 定位核心瓶颈：订单表缺少 (user_id, created_at) 联合索引，导致全表扫描。连接池配置不合理，max_connections=100 无法应对峰值。', rawSnippet: '【12:00 DBA - 赵工】根因很清楚了。订单表缺少 (user_id, created_at) 联合索引，导致每次查询都是全表扫描。加上连接池 max_connections=100 的配置，高峰时 500+ 并发直接把连接池打爆了。两年前配的 100，当时日活才 50 万，现在 300 万了。' },
+    { id: generateId(), timestamp: '20:00', title: '方案讨论与分歧', summary: '方案 A：增加索引 + 调整连接池（DBA 提出）；方案 B：引入读写分离 + Redis 缓存层（架构师提出）；方案 C：微服务拆分订单模块（后端负责人提出）。各方对实施周期和风险存在分歧。', rawSnippet: '【20:00 DBA - 赵工】方案 A：加联合索引 + 连接池调到 500，1 周能上线。\n【20:05 架构师 - 陈工】方案 B：引入读写分离 + Redis 缓存层，从根本上解决，但需要 1 个月。\n【20:10 后端负责人 - 李工】方案 C：微服务拆分订单模块，彻底解耦，但改动太大，2-3 个月。\n【20:15 SRE - 张工】我倾向 A + B 组合，短期 A 止血，中期 B 治本。C 太激进了。' },
+    { id: generateId(), timestamp: '32:00', title: '决策与排期', summary: '最终采纳方案 A 作为短期方案（1 周内上线），方案 B 作为中期方案（Q3 启动）。方案 C 因改动范围过大被否决，留待后续评估。', rawSnippet: '【32:00 主持人】好，我来总结。方案 A 本周五前上线，负责人赵工和李工；方案 B 下周三前出设计文档，Q3 启动，负责人陈工。方案 C 因改动范围过大，暂不实施，留到 Q4 评估。大家有异议吗？\n\n【32:30 全员】没有异议。' },
+    { id: generateId(), timestamp: '40:00', title: '后续行动项', summary: '明确各项任务负责人与截止日期：索引优化本周五前完成、连接池调优下周一上线、读写分离方案下周三前出设计文档。', rawSnippet: '【40:00 主持人】最后确认一下行动项：\n1. 联合索引优化，赵工负责，本周五前上线\n2. 连接池调到 500 + 水位监控，李工负责，下周一上线\n3. 读写分离方案设计文档，陈工负责，下周三前出\n4. 全链路压测验证，张工负责，方案 A 上线后一周内完成\n\n【40:30 主持人】好，今天就到这，辛苦大家。' },
   ];
 
   const decisions: Decision[] = [
@@ -312,7 +312,7 @@ export async function extractTodos(_minutes: string): Promise<Todo[]> {
       assignee: 'DBA',
       dueDate: in3Days.toISOString().split('T')[0],
       status: 'in_progress',
-      contextSnippet: 'DBA 定位核心瓶颈：订单表缺少联合索引导致全表扫描，占总请求 23%',
+      contextSnippet: { timestamp: '12:00', speaker: 'DBA', text: '订单表缺少 (user_id, created_at) 联合索引，导致全表扫描，占总请求 23%。' },
     },
     {
       id: generateId(),
@@ -320,7 +320,7 @@ export async function extractTodos(_minutes: string): Promise<Todo[]> {
       assignee: '后端负责人',
       dueDate: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'pending',
-      contextSnippet: '连接池配置不合理，max_connections=100 无法应对峰值，利用率持续 >95%',
+      contextSnippet: { timestamp: '12:05', speaker: 'DBA', text: '连接池 max_connections=100 无法应对峰值，并发请求 500+ 时连接池耗尽。' },
     },
     {
       id: generateId(),
@@ -328,7 +328,7 @@ export async function extractTodos(_minutes: string): Promise<Todo[]> {
       assignee: 'SRE',
       dueDate: nextWeek.toISOString().split('T')[0],
       status: 'pending',
-      contextSnippet: '上周故障根因是连接池耗尽无预警，需建立水位监控机制',
+      contextSnippet: { timestamp: '12:10', speaker: 'SRE', text: '上周故障根因是连接池耗尽无预警，需建立水位监控机制提前发现问题。' },
     },
     {
       id: generateId(),
@@ -336,7 +336,7 @@ export async function extractTodos(_minutes: string): Promise<Todo[]> {
       assignee: '架构师',
       dueDate: nextWeek.toISOString().split('T')[0],
       status: 'pending',
-      contextSnippet: '中期方案：引入读写分离 + Redis 缓存层，从根本上解决读写压力',
+      contextSnippet: { timestamp: '12:15', speaker: '架构师', text: '中期方案：引入读写分离 + Redis 缓存层，从根本上解决读写压力，为后续增长预留空间。' },
     },
     {
       id: generateId(),
@@ -344,7 +344,7 @@ export async function extractTodos(_minutes: string): Promise<Todo[]> {
       assignee: 'QA 负责人',
       dueDate: new Date(today.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'pending',
-      contextSnippet: '索引优化本周五前上线，需在灰度环境完成压测验证效果',
+      contextSnippet: { timestamp: '12:20', speaker: 'SRE', text: '索引优化本周五前上线，需在灰度环境完成压测验证效果。' },
     },
     {
       id: generateId(),
@@ -352,7 +352,7 @@ export async function extractTodos(_minutes: string): Promise<Todo[]> {
       assignee: 'SRE',
       dueDate: nextWeek.toISOString().split('T')[0],
       status: 'completed',
-      contextSnippet: '会议决定两周内完善故障应急 SOP，预防类似问题',
+      contextSnippet: { timestamp: '12:25', speaker: '主持人', text: '会议决定两周内完善故障应急 SOP，预防类似问题再次发生。' },
     },
   ];
 }
