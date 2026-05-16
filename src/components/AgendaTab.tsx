@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MaterialPool from './MaterialPool';
 import SmartForm from './SmartForm';
 import AILoadingSpinner from './AILoadingSpinner';
@@ -20,6 +20,15 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ meeting, onUpdateMeeting }) => {
   const [participants, setParticipants] = useState<string[]>(meeting.participants);
   const [agenda, setAgenda] = useState<AgendaItem[]>(meeting.agenda);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // 切换会议时同步本地状态
+  useEffect(() => {
+    setTitle(meeting.title);
+    setTime(meeting.time);
+    setParticipants(meeting.participants);
+    setAgenda(meeting.agenda);
+    setIsGenerating(false);
+  }, [meeting.id, meeting.status]);
 
   const handleAddMaterial = (material: Material) => {
     onUpdateMeeting({
@@ -85,6 +94,7 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ meeting, onUpdateMeeting }) => {
       />
 
       <SmartForm
+        meeting={meeting}
         materials={meeting.materials}
         title={title}
         time={time}
@@ -94,6 +104,7 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ meeting, onUpdateMeeting }) => {
         onTimeChange={setTime}
         onParticipantsChange={setParticipants}
         onAgendaChange={setAgenda}
+        onUpdateMeeting={onUpdateMeeting}
       />
 
       {!hasAgenda && (

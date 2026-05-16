@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { AgendaItem, Material } from '../types';
+import { AgendaItem, Material, Meeting } from '../types';
 import { smartParseForm } from '../utils/mockAiService';
 import AILoadingSpinner from './AILoadingSpinner';
 
 interface SmartFormProps {
+  meeting: Meeting;
   materials: Material[];
   title: string;
   time: string;
@@ -13,9 +14,11 @@ interface SmartFormProps {
   onTimeChange: (v: string) => void;
   onParticipantsChange: (v: string[]) => void;
   onAgendaChange: (v: AgendaItem[]) => void;
+  onUpdateMeeting: (meeting: Meeting) => void;
 }
 
 const SmartForm: React.FC<SmartFormProps> = ({
+  meeting,
   materials,
   title,
   time,
@@ -25,9 +28,27 @@ const SmartForm: React.FC<SmartFormProps> = ({
   onTimeChange,
   onParticipantsChange,
   onAgendaChange,
+  onUpdateMeeting,
 }) => {
   const [participantInput, setParticipantInput] = useState('');
   const [isParsing, setIsParsing] = useState(false);
+
+  // 统一持久化：更新本地 state + 回写 meeting 对象
+  const updateAndPersist = (
+    field: 'title' | 'time' | 'participants' | 'agenda',
+    value: string | string[] | AgendaItem[]
+  ) => {
+    const patch: Partial<Meeting> = { [field]: value, updatedAt: new Date().toISOString() };
+
+    switch (field) {
+      case 'title': onTitleChange(value as string); break;
+      case 'time': onTimeChange(value as string); break;
+      case 'participants': onParticipantsChange(value as string[]); break;
+      case 'agenda': onAgendaChange(value as AgendaItem[]); break;
+    }
+
+    onUpdateMeeting({ ...meeting, ...patch });
+  };
 
   const handleAiParse = async () => {
     if (materials.length === 0) return;
@@ -35,10 +56,19 @@ const SmartForm: React.FC<SmartFormProps> = ({
 
     try {
       const result = await smartParseForm(materials);
+      const patch = {
+        title: result.title,
+        time: result.time,
+        participants: result.participants,
+        agenda: result.agenda,
+        updatedAt: new Date().toISOString(),
+      };
+
       onTitleChange(result.title);
       onTimeChange(result.time);
       onParticipantsChange(result.participants);
       onAgendaChange(result.agenda);
+      onUpdateMeeting({ ...meeting, ...patch });
     } finally {
       setIsParsing(false);
     }
@@ -47,13 +77,13 @@ const SmartForm: React.FC<SmartFormProps> = ({
   const addParticipant = () => {
     const name = participantInput.trim();
     if (name && !participants.includes(name)) {
-      onParticipantsChange([...participants, name]);
+      updateAndPersist('participants', [...participants, name]);
       setParticipantInput('');
     }
   };
 
   const removeParticipant = (p: string) => {
-    onParticipantsChange(participants.filter((x) => x !== p));
+    updateAndPersist('participants', participants.filter((x) => x !== p));
   };
 
   const handleParticipantKeyDown = (e: React.KeyboardEvent) => {
@@ -71,21 +101,21 @@ const SmartForm: React.FC<SmartFormProps> = ({
       presenter: '',
       order: agenda.length + 1,
     };
-    onAgendaChange([...agenda, newItem]);
+    updateAndPersist('agenda', [...agenda, newItem]);
   };
 
   const updateAgendaItem = (index: number, field: keyof AgendaItem, value: string | number) => {
     const updated = agenda.map((item, i) =>
       i === index ? { ...item, [field]: value } : item
     );
-    onAgendaChange(updated);
+    updateAndPersist('agenda', updated);
   };
 
   const removeAgendaItem = (index: number) => {
     const updated = agenda
       .filter((_, i) => i !== index)
       .map((item, i) => ({ ...item, order: i + 1 }));
-    onAgendaChange(updated);
+    updateAndPersist('agenda', updated);
   };
 
   if (isParsing) {
@@ -131,7 +161,7 @@ const SmartForm: React.FC<SmartFormProps> = ({
           <input
             type="text"
             value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
+            onChange={(e) => updateAndPersist('title', e.target.value)}
             placeholder="输入或由 AI 自动填充"
             className="input-field"
           />
@@ -144,7 +174,7 @@ const SmartForm: React.FC<SmartFormProps> = ({
           <input
             type="time"
             value={time}
-            onChange={(e) => onTimeChange(e.target.value)}
+            onChange={(e) => updateAndPersist('time', e.target.value)}
             className="input-field"
           />
         </div>
