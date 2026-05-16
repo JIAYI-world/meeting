@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Meeting } from '../types';
 import { getMeetings, addMeeting, updateMeeting, deleteMeeting } from '../utils/storage';
+import { seedLocalStorage } from '../utils/seedData';
 
 export function useMeetings() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
   useEffect(() => {
-    setMeetings(getMeetings());
+    seedLocalStorage();
+    const data = getMeetings();
+    setMeetings(data);
+    if (data.length > 0) {
+      setSelectedMeeting(data[0]);
+    }
   }, []);
 
   const createMeeting = (meeting: Meeting) => {

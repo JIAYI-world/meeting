@@ -1,3 +1,5 @@
+export type MeetingScene = 'requirement' | 'incident' | 'sync' | 'technical' | 'other';
+
 export interface Material {
   id: string;
   name: string;
@@ -5,7 +7,16 @@ export interface Material {
   content: string;
   summary: string;
   isAnalyzing: boolean;
+  enabled: boolean;
+  relevance: 'high' | 'medium' | 'low';
   createdAt: string;
+}
+
+export interface PreTodo {
+  id: string;
+  content: string;
+  assignee: string;
+  priority: 'high' | 'medium' | 'low';
 }
 
 export interface Meeting {
@@ -16,10 +27,12 @@ export interface Meeting {
   location: string;
   participants: string[];
   background: string;
+  scene: MeetingScene;
   materials: Material[];
   agenda: AgendaItem[];
   minutes: Minutes | null;
   todos: Todo[];
+  preTodos: PreTodo[];
   previewSummary: string;
   status: 'preparing' | 'ongoing' | 'completed';
   createdAt: string;

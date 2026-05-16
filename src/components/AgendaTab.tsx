@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MaterialPool from './MaterialPool';
 import SmartForm from './SmartForm';
 import AILoadingSpinner from './AILoadingSpinner';
-import TimelineView from './TimelineView';
+import EditableTimeline from './EditableTimeline';
 import AgendaHealthBanner from './AgendaHealthBanner';
 import PreviewCard from './PreviewCard';
 import ShareButton from './ShareButton';
-import { AgendaItem, Material, Meeting } from '../types';
-import { generateAgenda, generatePreviewSummary } from '../utils/mockAiService';
+import PreTodoCard from './PreTodoCard';
+import PrepLayout from './PrepLayout';
+import FilePreviewModal from './FilePreviewModal';
+import { AgendaItem, Material, Meeting, MeetingScene } from '../types';
+import { generateAgenda, generatePreviewSummary, generatePreTodos } from '../utils/mockAiService';
 
 interface AgendaTabProps {
   meeting: Meeting;
@@ -17,14 +20,18 @@ interface AgendaTabProps {
 const AgendaTab: React.FC<AgendaTabProps> = ({ meeting, onUpdateMeeting }) => {
   const [title, setTitle] = useState(meeting.title);
   const [time, setTime] = useState(meeting.time);
+  const [scene, setScene] = useState<MeetingScene>(meeting.scene || 'other');
   const [participants, setParticipants] = useState<string[]>(meeting.participants);
   const [agenda, setAgenda] = useState<AgendaItem[]>(meeting.agenda);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [filePreviewMaterial, setFilePreviewMaterial] = useState<Material | null>(null);
+  const meetingRef = useRef(meeting);
+  meetingRef.current = meeting;
 
-  // 切换会议时同步本地状态
   useEffect(() => {
     setTitle(meeting.title);
     setTime(meeting.time);
+    setScene(meeting.scene || 'other');
     setParticipants(meeting.participants);
     setAgenda(meeting.agenda);
     setIsGenerating(false);
@@ -39,11 +46,30 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ meeting, onUpdateMeeting }) => {
   };
 
   const handleUpdateMaterial = (updated: Material) => {
-    const materials = meeting.materials.map((m) =>
-      m.id === updated.id ? updated : m
+    const m = meetingRef.current;
+    const materials = m.materials.map((mat) =>
+      mat.id === updated.id ? updated : mat
     );
     onUpdateMeeting({
-      ...meeting,
+      ...m,
+      materials,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleRemoveMaterial = (id: string) => {
+    const m = meetingRef.current;
+    const materials = m.materials.filter((mat) => mat.id !== id);
+    onUpdateMeeting({
+      ...m,
+      materials,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleReorderMaterials = (materials: Material[]) => {
+    onUpdateMeeting({
+      ...meetingRef.current,
       materials,
       updatedAt: new Date().toISOString(),
     });
@@ -53,11 +79,12 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ meeting, onUpdateMeeting }) => {
     setIsGenerating(true);
     try {
       const materialsText = meeting.materials
+        .filter((m) => m.enabled !== false)
         .map((m) => m.content + ' ' + m.summary)
         .join(' ');
 
       const background = [title, materialsText].filter(Boolean).join(' ');
-      const generatedAgenda = await generateAgenda(background || '技术评审会议');
+      const generatedAgenda = await generateAgenda(background || '技术评审会议', scene);
 
       setAgenda(generatedAgenda);
 
@@ -65,17 +92,19 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ meeting, onUpdateMeeting }) => {
         ...meeting,
         title: title || meeting.title,
         time,
+        scene,
         participants,
         agenda: generatedAgenda,
         background,
         updatedAt: new Date().toISOString(),
       };
 
-      const preview = await generatePreviewSummary({
-        ...updatedMeeting,
-        agenda: generatedAgenda,
-      });
+      const [preview, preTodos] = await Promise.all([
+        generatePreviewSummary({ ...updatedMeeting, agenda: generatedAgenda }),
+        generatePreTodos({ ...updatedMeeting, agenda: generatedAgenda }),
+      ]);
       updatedMeeting.previewSummary = preview;
+      updatedMeeting.preTodos = preTodos;
 
       onUpdateMeeting(updatedMeeting);
     } finally {
@@ -85,12 +114,15 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ meeting, onUpdateMeeting }) => {
 
   const hasAgenda = agenda.length > 0;
 
-  return (
-    <div className="space-y-6">
+  const leftPanel = (
+    <>
       <MaterialPool
         materials={meeting.materials}
         onAddMaterial={handleAddMaterial}
         onUpdateMaterial={handleUpdateMaterial}
+        onRemoveMaterial={handleRemoveMaterial}
+        onReorderMaterials={handleReorderMaterials}
+        onViewFile={setFilePreviewMaterial}
       />
 
       <SmartForm
@@ -98,10 +130,12 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ meeting, onUpdateMeeting }) => {
         materials={meeting.materials}
         title={title}
         time={time}
+        scene={scene}
         participants={participants}
         agenda={agenda}
         onTitleChange={setTitle}
         onTimeChange={setTime}
+        onSceneChange={setScene}
         onParticipantsChange={setParticipants}
         onAgendaChange={setAgenda}
         onUpdateMeeting={onUpdateMeeting}
@@ -126,37 +160,61 @@ const AgendaTab: React.FC<AgendaTabProps> = ({ meeting, onUpdateMeeting }) => {
           )}
         </button>
       )}
+    </>
+  );
 
-      {isGenerating && <AILoadingSpinner text="正在综合分析语料并生成议程..." />}
+  const rightPanel = (
+    <>
+      {isGenerating && (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <AILoadingSpinner text="正在综合分析语料并生成议程..." />
+        </div>
+      )}
 
       {hasAgenda && !isGenerating && (
         <>
-          <TimelineView items={agenda} />
+          {meeting.previewSummary && <PreviewCard meeting={meeting} />}
+
+          <EditableTimeline items={agenda} onChange={(items) => {
+            setAgenda(items);
+            onUpdateMeeting({
+              ...meeting,
+              agenda: items,
+              updatedAt: new Date().toISOString(),
+            });
+          }} />
+
           <AgendaHealthBanner count={agenda.length} />
 
-          {meeting.previewSummary && <PreviewCard meeting={meeting} />}
+          <PreTodoCard todos={meeting.preTodos || []} />
 
           <ShareButton meeting={meeting} />
 
           <button
-            onClick={() => {
-              setAgenda([]);
-              setTitle(meeting.title);
-              setParticipants(meeting.participants);
-              onUpdateMeeting({
-                ...meeting,
-                agenda: [],
-                previewSummary: '',
-                updatedAt: new Date().toISOString(),
-              });
-            }}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            onClick={handleGenerateAgenda}
+            disabled={isGenerating}
+            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
           >
-            重新生成议程
+            {isGenerating ? '正在重新生成...' : '🔄 重新生成议程'}
           </button>
         </>
       )}
-    </div>
+
+      {!hasAgenda && !isGenerating && (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <span className="text-5xl mb-4">🎯</span>
+          <p className="text-sm">添加素材并点击「AI 生成完整议程」</p>
+          <p className="text-xs mt-1">AI 将综合语料自动生成结构化议程</p>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      <PrepLayout left={leftPanel} right={rightPanel} />
+      <FilePreviewModal material={filePreviewMaterial} onClose={() => setFilePreviewMaterial(null)} />
+    </>
   );
 };
 

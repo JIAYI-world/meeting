@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Meeting } from '../types';
+import { Meeting, MeetingScene } from '../types';
 import { generateId } from '../utils/storage';
 
 interface CreateMeetingModalProps {
@@ -18,6 +18,7 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
   const [time, setTime] = useState('10:00');
   const [location, setLocation] = useState('');
   const [participants, setParticipants] = useState('');
+  const [scene, setScene] = useState<MeetingScene>('other');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,10 +31,12 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
       location,
       participants: participants.split(',').map(p => p.trim()).filter(p => p),
       background: '',
+      scene,
       materials: [],
       agenda: [],
       minutes: null,
       todos: [],
+      preTodos: [],
       previewSummary: '',
       status: 'preparing',
       createdAt: new Date().toISOString(),
@@ -51,6 +54,7 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
     setTime('10:00');
     setLocation('');
     setParticipants('');
+    setScene('other');
   };
 
   if (!isOpen) return null;
@@ -121,6 +125,23 @@ const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
               className="input-field"
               placeholder="输入会议室名称"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              会议场景
+            </label>
+            <select
+              value={scene}
+              onChange={(e) => setScene(e.target.value as MeetingScene)}
+              className="input-field"
+            >
+              <option value="requirement">需求评审</option>
+              <option value="incident">故障复盘</option>
+              <option value="sync">常规同步</option>
+              <option value="technical">技术评审</option>
+              <option value="other">其他</option>
+            </select>
           </div>
 
           <div>

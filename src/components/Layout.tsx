@@ -10,7 +10,6 @@ interface LayoutProps {
   onCreateMeeting: (meeting: Meeting) => void;
   onUpdateMeeting: (meeting: Meeting) => void;
   onDeleteMeeting: (id: string) => void;
-  onSeedComplete?: () => void;
 }
 
 const Layout: React.FC<LayoutProps> = ({
@@ -20,7 +19,6 @@ const Layout: React.FC<LayoutProps> = ({
   onCreateMeeting,
   onUpdateMeeting,
   onDeleteMeeting,
-  onSeedComplete,
 }) => {
   return (
     <div className="flex h-screen bg-gray-50">
@@ -30,7 +28,6 @@ const Layout: React.FC<LayoutProps> = ({
         onSelectMeeting={onSelectMeeting}
         onCreateMeeting={onCreateMeeting}
         onDeleteMeeting={onDeleteMeeting}
-        onSeedComplete={onSeedComplete}
       />
       <MainWorkspace
         meeting={selectedMeeting}

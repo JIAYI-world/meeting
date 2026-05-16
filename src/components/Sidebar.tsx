@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import MeetingCard from './MeetingCard';
 import CreateMeetingModal from './CreateMeetingModal';
 import { Meeting } from '../types';
-import { seedLocalStorage } from '../utils/seedData';
 
 interface SidebarProps {
   meetings: Meeting[];
@@ -10,7 +9,6 @@ interface SidebarProps {
   onSelectMeeting: (meeting: Meeting) => void;
   onCreateMeeting: (meeting: Meeting) => void;
   onDeleteMeeting: (id: string) => void;
-  onSeedComplete?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -19,10 +17,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSelectMeeting,
   onCreateMeeting,
   onDeleteMeeting,
-  onSeedComplete,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [seeded, setSeeded] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     preparing: true,
     completed: false,
@@ -37,12 +33,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const toggleGroup = (group: string) => {
     setExpandedGroups((prev) => ({ ...prev, [group]: !prev[group] }));
-  };
-
-  const handleSeed = () => {
-    seedLocalStorage();
-    setSeeded(true);
-    onSeedComplete?.();
   };
 
   const preparingMeetings = meetings.filter((m) => m.status === 'preparing');
@@ -116,16 +106,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
           <span>+</span>
           <span>新会议</span>
-        </button>
-        <button
-          onClick={handleSeed}
-          className={`w-full text-sm py-2 px-3 rounded-lg border transition-all ${
-            seeded
-              ? 'bg-green-50 border-green-200 text-green-700'
-              : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-          }`}
-        >
-          {seeded ? '✅ 已加载 3 条演示数据' : '📦 加载演示数据'}
         </button>
       </div>
 

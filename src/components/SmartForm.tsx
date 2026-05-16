@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AgendaItem, Material, Meeting } from '../types';
+import { AgendaItem, Material, Meeting, MeetingScene } from '../types';
 import { smartParseForm } from '../utils/mockAiService';
 import AILoadingSpinner from './AILoadingSpinner';
 
@@ -8,10 +8,12 @@ interface SmartFormProps {
   materials: Material[];
   title: string;
   time: string;
+  scene: MeetingScene;
   participants: string[];
   agenda: AgendaItem[];
   onTitleChange: (v: string) => void;
   onTimeChange: (v: string) => void;
+  onSceneChange: (v: MeetingScene) => void;
   onParticipantsChange: (v: string[]) => void;
   onAgendaChange: (v: AgendaItem[]) => void;
   onUpdateMeeting: (meeting: Meeting) => void;
@@ -22,10 +24,12 @@ const SmartForm: React.FC<SmartFormProps> = ({
   materials,
   title,
   time,
+  scene,
   participants,
   agenda,
   onTitleChange,
   onTimeChange,
+  onSceneChange,
   onParticipantsChange,
   onAgendaChange,
   onUpdateMeeting,
@@ -35,14 +39,15 @@ const SmartForm: React.FC<SmartFormProps> = ({
 
   // 统一持久化：更新本地 state + 回写 meeting 对象
   const updateAndPersist = (
-    field: 'title' | 'time' | 'participants' | 'agenda',
-    value: string | string[] | AgendaItem[]
+    field: 'title' | 'time' | 'scene' | 'participants' | 'agenda',
+    value: string | string[] | AgendaItem[] | MeetingScene
   ) => {
     const patch: Partial<Meeting> = { [field]: value, updatedAt: new Date().toISOString() };
 
     switch (field) {
       case 'title': onTitleChange(value as string); break;
       case 'time': onTimeChange(value as string); break;
+      case 'scene': onSceneChange(value as MeetingScene); break;
       case 'participants': onParticipantsChange(value as string[]); break;
       case 'agenda': onAgendaChange(value as AgendaItem[]); break;
     }
@@ -177,6 +182,23 @@ const SmartForm: React.FC<SmartFormProps> = ({
             onChange={(e) => updateAndPersist('time', e.target.value)}
             className="input-field"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            会议场景
+          </label>
+          <select
+            value={scene}
+            onChange={(e) => updateAndPersist('scene', e.target.value as MeetingScene)}
+            className="input-field"
+          >
+            <option value="requirement">需求评审</option>
+            <option value="incident">故障复盘</option>
+            <option value="sync">常规同步</option>
+            <option value="technical">技术评审</option>
+            <option value="other">其他</option>
+          </select>
         </div>
 
         <div>
