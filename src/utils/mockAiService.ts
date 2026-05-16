@@ -1,4 +1,4 @@
-import { AgendaItem, Material, Meeting, MeetingScene, Minutes, PreTodo, Todo } from '../types';
+import { AgendaItem, Decision, Material, Meeting, MeetingScene, MinuteChapter, Minutes, PreTodo, Todo } from '../types';
 import { generateId } from './storage';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -261,33 +261,37 @@ export async function generatePreTodos(meeting: Meeting): Promise<PreTodo[]> {
 export async function generateMinutes(rawInput: string): Promise<Minutes> {
   await delay(2500 + Math.random() * 1500);
 
+  const chapters: MinuteChapter[] = [
+    { id: generateId(), timestamp: '00:00', title: '会议开场与背景同步', summary: '主持人介绍会议目标：评估高并发场景下 API 性能瓶颈，确定优化方案。同步上周故障影响范围：8.7 万笔订单受阻，P99 延迟飙升至 580ms。' },
+    { id: generateId(), timestamp: '05:30', title: '性能数据回顾', summary: 'SRE 团队展示监控大盘：数据库连接池利用率持续 >95%，订单查询慢 SQL 占总请求 23%，缓存命中率从 92% 降至 78%。' },
+    { id: generateId(), timestamp: '12:00', title: '根因分析', summary: 'DBA 定位核心瓶颈：订单表缺少 (user_id, created_at) 联合索引，导致全表扫描。连接池配置不合理，max_connections=100 无法应对峰值。' },
+    { id: generateId(), timestamp: '20:00', title: '方案讨论与分歧', summary: '方案 A：增加索引 + 调整连接池（DBA 提出）；方案 B：引入读写分离 + Redis 缓存层（架构师提出）；方案 C：微服务拆分订单模块（后端负责人提出）。各方对实施周期和风险存在分歧。' },
+    { id: generateId(), timestamp: '32:00', title: '决策与排期', summary: '最终采纳方案 A 作为短期方案（1 周内上线），方案 B 作为中期方案（Q3 启动）。方案 C 因改动范围过大被否决，留待后续评估。' },
+    { id: generateId(), timestamp: '40:00', title: '后续行动项', summary: '明确各项任务负责人与截止日期：索引优化本周五前完成、连接池调优下周一上线、读写分离方案下周三前出设计文档。' },
+  ];
+
+  const decisions: Decision[] = [
+    { id: generateId(), conclusion: '短期采用「增加联合索引 + 调整连接池」方案', reason: '改动最小、见效最快，1 周内可上线验证效果', isRejected: false },
+    { id: generateId(), conclusion: '中期启动「读写分离 + Redis 缓存层」建设', reason: '从根本上解决读写压力，为后续增长预留空间', isRejected: false },
+    { id: generateId(), conclusion: '建立连接池水位监控告警（阈值 80%）', reason: '预防类似故障再次发生，提前预警', isRejected: false },
+    { id: generateId(), conclusion: '微服务拆分订单模块', reason: '改动范围过大、实施周期 2-3 个月，短期 ROI 不足', isRejected: true },
+  ];
+
   const content = `## 会议纪要
 
 ### 会议要点
-1. ${rawInput.substring(0, 80)}...
-2. 团队对当前进展表示认可
-3. 确定了下一阶段的重点工作
+${chapters.map(c => `${c.timestamp} **${c.title}**：${c.summary}`).join('\n\n')}
 
-### 关键讨论
-- 技术方案已基本确定，需要进一步细化
-- 时间节点需要重新评估
-- 资源分配需要优化
-
-### 后续行动
-- 相关负责人需在本周内提交详细计划
-- 下次会议将重点讨论执行细节`;
-
-  const decisions = [
-    '确定采用新的技术方案',
-    '项目时间线调整为下月底',
-    '增加两名开发人员支持',
-  ];
+### 关键决策
+${decisions.filter(d => !d.isRejected).map(d => `- ${d.conclusion}（${d.reason}）`).join('\n')}
+${decisions.filter(d => d.isRejected).map(d => `- ~~${d.conclusion}~~ — 已否决：${d.reason}`).join('\n')}`;
 
   return {
     id: generateId(),
     meetingId: '',
     rawInput,
     content,
+    chapters,
     decisions,
     createdAt: new Date().toISOString(),
   };
@@ -299,28 +303,56 @@ export async function extractTodos(_minutes: string): Promise<Todo[]> {
 
   const today = new Date();
   const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const in3Days = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
 
   return [
     {
       id: generateId(),
-      content: '完成技术方案文档',
-      assignee: '张三',
+      content: '为订单表增加 (user_id, created_at) 联合索引',
+      assignee: 'DBA',
+      dueDate: in3Days.toISOString().split('T')[0],
+      status: 'in_progress',
+      contextSnippet: 'DBA 定位核心瓶颈：订单表缺少联合索引导致全表扫描，占总请求 23%',
+    },
+    {
+      id: generateId(),
+      content: '调整数据库连接池 max_connections 至 500',
+      assignee: '后端负责人',
+      dueDate: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'pending',
+      contextSnippet: '连接池配置不合理，max_connections=100 无法应对峰值，利用率持续 >95%',
+    },
+    {
+      id: generateId(),
+      content: '建立连接池水位监控告警（阈值 80%）',
+      assignee: 'SRE',
       dueDate: nextWeek.toISOString().split('T')[0],
       status: 'pending',
+      contextSnippet: '上周故障根因是连接池耗尽无预警，需建立水位监控机制',
     },
     {
       id: generateId(),
-      content: '组织代码评审会议',
-      assignee: '李四',
-      dueDate: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: 'in_progress',
+      content: '输出读写分离 + Redis 缓存层设计文档',
+      assignee: '架构师',
+      dueDate: nextWeek.toISOString().split('T')[0],
+      status: 'pending',
+      contextSnippet: '中期方案：引入读写分离 + Redis 缓存层，从根本上解决读写压力',
     },
     {
       id: generateId(),
-      content: '更新项目时间线',
-      assignee: '王五',
-      dueDate: today.toISOString().split('T')[0],
+      content: '完成索引优化后的压测验证',
+      assignee: 'QA 负责人',
+      dueDate: new Date(today.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'pending',
+      contextSnippet: '索引优化本周五前上线，需在灰度环境完成压测验证效果',
+    },
+    {
+      id: generateId(),
+      content: '更新故障应急 SOP 文档',
+      assignee: 'SRE',
+      dueDate: nextWeek.toISOString().split('T')[0],
       status: 'completed',
+      contextSnippet: '会议决定两周内完善故障应急 SOP，预防类似问题',
     },
   ];
 }

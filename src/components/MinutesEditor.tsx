@@ -31,10 +31,14 @@ const MinutesEditor: React.FC<MinutesEditorProps> = ({ minutes }) => {
             会议决策
           </h3>
           <ul className="space-y-2">
-            {minutes.decisions.map((decision, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <span className="text-green-500 mt-1">✓</span>
-                <span className="text-gray-700">{decision}</span>
+            {minutes.decisions.map((decision) => (
+              <li key={decision.id} className="flex items-start gap-2">
+                <span className={decision.isRejected ? 'text-red-400 mt-1' : 'text-green-500 mt-1'}>
+                  {decision.isRejected ? '✗' : '✓'}
+                </span>
+                <span className={decision.isRejected ? 'text-gray-500 line-through' : 'text-gray-700'}>
+                  {decision.conclusion}
+                </span>
               </li>
             ))}
           </ul>

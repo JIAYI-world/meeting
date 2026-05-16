@@ -47,12 +47,27 @@ export interface AgendaItem {
   order: number;
 }
 
+export interface MinuteChapter {
+  id: string;
+  timestamp: string;
+  title: string;
+  summary: string;
+}
+
+export interface Decision {
+  id: string;
+  conclusion: string;
+  reason: string;
+  isRejected: boolean;
+}
+
 export interface Minutes {
   id: string;
   meetingId: string;
   rawInput: string;
   content: string;
-  decisions: string[];
+  chapters: MinuteChapter[];
+  decisions: Decision[];
   createdAt: string;
 }
 
@@ -62,6 +77,7 @@ export interface Todo {
   assignee: string;
   dueDate: string;
   status: 'pending' | 'in_progress' | 'completed';
+  contextSnippet: string;
 }
 
 export type TabType = 'agenda' | 'minutes';
