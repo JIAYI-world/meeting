@@ -21,6 +21,8 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+        env:
+          BASE_PATH: /meeting/
 
       - uses: peaceiris/actions-gh-pages@v4
         with:
